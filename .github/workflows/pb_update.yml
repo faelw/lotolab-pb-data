@@ -1,0 +1,46 @@
+name: PB Data Update
+
+on:
+  schedule:
+    - cron: '0 3 * * *' # Roda automaticamente todo dia às 03:00 UTC
+  workflow_dispatch:      # Permite rodar manualmente pelo botão "Run workflow"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    # Permissão CRÍTICA para gravar arquivos no repositório
+    permissions:
+      contents: write
+      
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v3
+
+      - name: Configurar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Instalar Dependências
+        run: pip install requests
+
+      - name: Rodar Motor LotoLab (Multi-API)
+        run: python main.py
+
+      - name: Salvar Resultados no Git
+        run: |
+          # Configura o "robô" do Git
+          git config --global user.name "PB-Bot"
+          git config --global user.email "bot@lotolab.com"
+          
+          # Tenta adicionar os arquivos de dados e logs
+          # O "|| true" garante que não quebre se algum arquivo não existir
+          git add pb_history.json pb_recent.json last_update.txt error_log.txt || true
+          
+          # Verifica se há algo para salvar. Se não houver mudanças, não faz nada (exit 0)
+          # [skip ci] evita que essa gravação dispare o robô novamente num loop infinito
+          git commit -m "🎰 PB Auto-Update [skip ci]" || exit 0
+          
+          # Envia para o repositório
+          git push
