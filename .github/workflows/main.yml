@@ -2,7 +2,7 @@ name: PB Data Update
 
 on:
   schedule:
-    - cron: '0 3 * * *'
+    - cron: '0 3 * * *' # Roda às 3 da manhã
   workflow_dispatch:
 
 jobs:
@@ -17,9 +17,11 @@ jobs:
           python-version: '3.9'
       - run: pip install requests
       - run: python main.py
-      - run: |
+      - name: Commit and Push
+        run: |
           git config --global user.name "PB-Bot"
           git config --global user.email "bot@lotolab.com"
-          git add *.json last_update.txt
-          git commit -m "PB Update" || exit 0
+          # Adiciona apenas o que existir, sem dar erro fatal
+          git add pb_history.json pb_recent.json last_update.txt error_log.txt 2>/dev/null || true
+          git commit -m "🎰 PB Auto-Update [skip ci]" || exit 0
           git push
